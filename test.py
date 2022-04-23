@@ -4,6 +4,7 @@ from googleapiclient.errors import HttpError
 
 from google.oauth2 import service_account
 import googleapiclient.discovery
+import gspread
 
 
 
@@ -24,7 +25,7 @@ def create_message(sender, to, subject, message_text):
   message['to'] = to
   message['from'] = sender
   message['subject'] = subject
-  return dict(raw=base64.urlsafe_b64encode(message.as_bytes()))
+  return {'raw': str(base64.urlsafe_b64encode(message.as_bytes()))}
 
 
 def send_message(service, user_id, message):
@@ -51,13 +52,16 @@ def send_message(service, user_id, message):
 
 
 
-SCOPES = ['https://www.googleapis.com/auth/sqlservice.admin']
+SCOPES = ["https://spreadsheets.google.com/feeds",
+          'https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/gmail']
 SERVICE_ACCOUNT_FILE = 'credentials.json'
 
 credentials = service_account.Credentials.from_service_account_file(
         SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+
 delegated_credentials = credentials.with_subject('cheking-system@checksyst.iam.gserviceaccount.com')
-servise = googleapiclient.discovery.build('gmail', 'v1', credentials=credentials)
+servise = googleapiclient.discovery.build('gmail', 'v1', credentials=delegated_credentials)
 
 text = create_message('cheking-system@checksyst.iam.gserviceaccount.com', 'surganov.denis@gmail.com', 'test', 'test test test')
-send_message(servise, 'surganov.denis@gmail.com', text)
+send_message(servise, 'me', text)
