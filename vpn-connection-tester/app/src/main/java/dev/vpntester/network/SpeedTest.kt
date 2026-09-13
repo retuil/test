@@ -14,7 +14,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.coroutines.executeAsync
-import okio.Buffer
 import okio.BufferedSink
 
 class CloudflareSpeedTest(baseClient: OkHttpClient, private val recorder: DiagnosticRecorder) {
@@ -49,11 +48,10 @@ class CloudflareSpeedTest(baseClient: OkHttpClient, private val recorder: Diagno
 
     private suspend fun downloadSample(bytes: Long): Sample {
         val request = Request.Builder().url("https://speed.cloudflare.com/__down?bytes=$bytes").header("Cache-Control", "no-cache").header("Accept-Encoding", "identity").build()
-        val started = System.nanoTime(); var received = 0L
-        client.newCall(request).executeAsync().use { response ->
+        val started = System.nanoTime()
+        val received = client.newCall(request).executeAsync().use { response ->
             if (!response.isSuccessful) throw IOException("Cloudflare download HTTP ${response.code}")
-            val source = response.body?.source() ?: throw IOException("Empty download response"); val buffer = Buffer()
-            while (true) { val read = source.read(buffer, 64 * 1024L); if (read == -1L) break; received += read; buffer.clear() }
+            response.body.bytes().size.toLong()
         }
         return Sample(received, ((System.nanoTime() - started) / 1_000_000).coerceAtLeast(1))
     }
