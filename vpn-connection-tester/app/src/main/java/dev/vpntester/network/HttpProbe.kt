@@ -17,7 +17,6 @@ import kotlinx.coroutines.CancellationException
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.coroutines.executeAsync
-import okio.Buffer
 
 data class ProbeConfig(val service: ServiceId, val url: String, val classify: (Int) -> ProbeStatus)
 
@@ -29,7 +28,7 @@ class HttpProbe(private val baseClient: OkHttpClient, private val recorder: Diag
         val request = Request.Builder().url(config.url).header("User-Agent", "VpnConnectionTester/0.1 Android").header("Cache-Control", "no-cache").build()
         return try {
             client.newCall(request).executeAsync().use { response ->
-                response.body?.source()?.let { source -> val buffer = Buffer(); source.read(buffer, 1024) }
+                response.body.bytes()
                 val timings = trace.toTimings()
                 val result = ServiceResult(config.service, config.classify(response.code), response.code, timings = timings)
                 recorder?.log(LogLevel.INFO, config.service.name, "HTTP ${response.code} ${result.status} dns=${fmt(timings.dnsMs)} connect=${fmt(timings.connectMs)} tls=${fmt(timings.tlsMs)} total=${fmt(timings.totalMs)}")
