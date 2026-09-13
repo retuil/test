@@ -24,7 +24,17 @@ jobs:
         run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
       - name: Unit tests and debug APK
         working-directory: vpn-connection-tester
-        run: gradle testDebugUnitTest assembleDebug --stacktrace
+        shell: bash
+        run: |
+          set -o pipefail
+          gradle testDebugUnitTest assembleDebug --stacktrace 2>&1 | tee build.log
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vpn-connection-tester-build-log
+          path: vpn-connection-tester/build.log
+          if-no-files-found: error
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
