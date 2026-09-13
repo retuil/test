@@ -1,9 +1,6 @@
 name: Android Debug Build
 
 on:
-  push:
-    branches:
-      - work/vpn-tester-cloud-build
   workflow_dispatch:
 
 jobs:
@@ -12,34 +9,22 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
-
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-
       - uses: android-actions/setup-android@v3
-
       - name: Install Android SDK 36
         run: sdkmanager "platforms;android-36" "build-tools;35.0.0"
-
-      - name: Restore and verify project
-        run: |
-          base64 --decode vpn-connection-tester-android-v0.1.zip.b64 > project.zip
-          echo "8cdcadf2febaeb6d5b68c08ebd848da24564e34d58dc38f9bc60e2c186ea2715  project.zip" | sha256sum -c -
-          unzip -q project.zip
-
       - name: Unit tests and debug APK
-        working-directory: VpnConnectionTester
+        working-directory: vpn-connection-tester
         run: gradle testDebugUnitTest assembleDebug --stacktrace
-
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
         with:
           name: vpn-connection-tester-debug
-          path: VpnConnectionTester/app/build/outputs/apk/debug/app-debug.apk
+          path: vpn-connection-tester/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
